@@ -1,0 +1,61 @@
+name: Ardoise web bundle
+
+on:
+  push:
+    branches: [ardoise]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ardoise-web-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: 1
+  WORDCRAFT_BUILD_SHA: ${{ github.sha }}
+  TRUNK_VERSION: 0.21.14
+
+jobs:
+  web:
+    name: Web (wasm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out craft-fonts
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          repository: storytold/craft-fonts
+          ref: abb83316d96aa59c1cf64784289e378fe9fa5695
+          path: craft-fonts
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ardoise-web
+      - name: Install trunk
+        run: |
+          curl -fsSL "https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar -xz -C "$HOME/.cargo/bin" trunk
+          trunk --version
+      - name: Build and zip
+        env:
+          CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+          CRAFT_FONTS_REQUIRED: "1"
+        run: packaging/web/package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ardoise-web-word
+          path: dist/release/*.zip
+          if-no-files-found: error
+      - name: Attach to a GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ardoise-web-word-v0.4.0-${{ github.run_number }}
+        run: |
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "Ardoise Documents web bundle ($TAG)" \
+            --notes "Web bundle built from $GITHUB_SHA (based on WordCraft v0.4.0, Apache-2.0)." dist/release/*.zip

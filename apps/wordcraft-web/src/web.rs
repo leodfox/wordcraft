@@ -35,6 +35,7 @@ pub fn start() {
                         log::info!("wordcraft-web: wgpu backend {:?}", rs.adapter.get_info().backend);
                     }
                     let inbox: Inbox = Inbox::default();
+                    install_bridge(inbox.clone(), cc.egui_ctx.clone());
                     let doc = if query().contains("sample") { wordcraft_engine::sample::sample_document() } else { wordcraft_doc::Document::new() };
                     let mut app = WordApp::new(Session::new(doc), services(inbox.clone(), cc.egui_ctx.clone()));
                     app.autosave = false;
@@ -127,6 +128,9 @@ fn services(inbox: Inbox, ctx: egui::Context) -> Services {
 fn download(path: &str, bytes: &[u8]) -> Result<(), String> {
     let js = |e: wasm_bindgen::JsValue| format!("{e:?}");
     let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "document".into());
+    if post_saved(&name, bytes) {
+        return Ok(());
+    }
     let window = web_sys::window().ok_or("no window")?;
     let document = window.document().ok_or("no document")?;
     let parts = js_sys::Array::of1(&js_sys::Uint8Array::from(bytes));
@@ -162,5 +166,102 @@ fn mime_for(name: &str) -> &'static str {
         Some("md" | "txt") => "text/plain",
         Some("json") => "application/json",
         _ => "application/octet-stream",
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Ardoise host bridge (postMessage). Protocol: see BRIDGE.md in the Ardoise repository.
+//   -> parent  {type:"ready", app}                           once the editor is up
+//   <- editor  {type:"open", name, bytes:ArrayBuffer}         same-origin only
+//   -> parent  {type:"saved", app, name, bytes:ArrayBuffer}   native-format save inside an iframe
+// ---------------------------------------------------------------------------------------------
+const ARDOISE_APP: &str = "word";
+const NATIVE_EXTS: &[&str] = &["docx"];
+
+fn js_err(e: wasm_bindgen::JsValue) -> String {
+    format!("{e:?}")
+}
+
+/// True when this page is embedded in another window (an iframe).
+fn in_iframe() -> bool {
+    let Some(w) = web_sys::window() else {
+        return false;
+    };
+    match w.parent() {
+        Ok(Some(p)) => !js_sys::Object::is(&p, &w),
+        _ => false,
+    }
+}
+
+fn str_field(obj: &wasm_bindgen::JsValue, key: &str) -> Option<String> {
+    js_sys::Reflect::get(obj, &wasm_bindgen::JsValue::from_str(key)).ok()?.as_string()
+}
+
+/// Post `msg` to the parent window, addressed to our own origin only (same-origin embed).
+fn post_to_parent(msg: &js_sys::Object) -> Result<(), String> {
+    let w = web_sys::window().ok_or("no window")?;
+    let origin = w.location().origin().map_err(js_err)?;
+    let parent = w.parent().map_err(js_err)?.ok_or("no parent window")?;
+    parent.post_message(msg, &origin).map_err(js_err)
+}
+
+fn message(fields: &[(&str, wasm_bindgen::JsValue)]) -> js_sys::Object {
+    let o = js_sys::Object::new();
+    for (k, v) in fields {
+        let _ = js_sys::Reflect::set(&o, &wasm_bindgen::JsValue::from_str(k), v);
+    }
+    o
+}
+
+/// Listen for `open` messages from same-origin senders and announce `ready` to the parent.
+fn install_bridge(inbox: Inbox, ctx: egui::Context) {
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let own_origin = window.location().origin().unwrap_or_default();
+    let on_message = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |ev: web_sys::MessageEvent| {
+        if ev.origin() != own_origin {
+            return;
+        }
+        let data = ev.data();
+        if str_field(&data, "type").as_deref() != Some("open") {
+            return;
+        }
+        let Ok(bytes) = js_sys::Reflect::get(&data, &wasm_bindgen::JsValue::from_str("bytes")) else {
+            return;
+        };
+        if !(bytes.is_instance_of::<js_sys::ArrayBuffer>() || bytes.is_instance_of::<js_sys::Uint8Array>()) {
+            log::warn!("bridge: open message without ArrayBuffer bytes ignored");
+            return;
+        }
+        let name = str_field(&data, "name").filter(|n| !n.is_empty()).unwrap_or_else(|| "document".into());
+        let bytes = js_sys::Uint8Array::new(&bytes).to_vec();
+        inbox.lock().unwrap_or_else(|e| e.into_inner()).push((name, bytes));
+        ctx.request_repaint();
+    });
+    let _ = window.add_event_listener_with_callback("message", on_message.as_ref().unchecked_ref());
+    on_message.forget();
+    if in_iframe()
+        && let Err(e) = post_to_parent(&message(&[("type", "ready".into()), ("app", ARDOISE_APP.into())]))
+    {
+        log::error!("bridge: ready message failed: {e}");
+    }
+}
+
+/// Native-format save inside an iframe: hand the bytes to the host instead of downloading.
+/// Returns true when the bytes were posted.
+fn post_saved(name: &str, bytes: &[u8]) -> bool {
+    let ext = name.rsplit('.').next().map(str::to_ascii_lowercase).unwrap_or_default();
+    if !in_iframe() || !NATIVE_EXTS.contains(&ext.as_str()) {
+        return false;
+    }
+    let buffer = js_sys::Uint8Array::from(bytes).buffer();
+    let msg = message(&[("type", "saved".into()), ("app", ARDOISE_APP.into()), ("name", name.into()), ("bytes", buffer.into())]);
+    match post_to_parent(&msg) {
+        Ok(()) => true,
+        Err(e) => {
+            log::error!("bridge: saved message failed ({e}); falling back to download");
+            false
+        }
     }
 }
