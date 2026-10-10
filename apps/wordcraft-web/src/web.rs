@@ -172,7 +172,7 @@ fn mime_for(name: &str) -> &'static str {
 // ---------------------------------------------------------------------------------------------
 // Ardoise host bridge (postMessage). Protocol: see BRIDGE.md in the Ardoise repository.
 //   -> parent  {type:"ready", app}                           once the editor is up
-//   <- editor  {type:"open", name, bytes:ArrayBuffer}         same-origin only
+//   <- editor  {type:"open", name, bytes:ArrayBuffer}         only from window.parent at ?parentOrigin=
 //   -> parent  {type:"saved", app, name, bytes:ArrayBuffer}   native-format save inside an iframe
 // ---------------------------------------------------------------------------------------------
 const ARDOISE_APP: &str = "word";
@@ -197,10 +197,43 @@ fn str_field(obj: &wasm_bindgen::JsValue, key: &str) -> Option<String> {
     js_sys::Reflect::get(obj, &wasm_bindgen::JsValue::from_str(key)).ok()?.as_string()
 }
 
-/// Post `msg` to the parent window, addressed to our own origin only (same-origin embed).
+/// Accept only `https://host[:port]` or `http://localhost[:port]` (no path, query, fragment or userinfo).
+fn valid_origin(o: &str) -> bool {
+    let (rest, https) = match (o.strip_prefix("https://"), o.strip_prefix("http://")) {
+        (Some(r), _) => (r, true),
+        (None, Some(r)) => (r, false),
+        _ => return false,
+    };
+    if rest.is_empty() || !rest.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | ':')) {
+        return false;
+    }
+    let (host, port) = match rest.split_once(':') {
+        Some((h, p)) => (h, Some(p)),
+        None => (rest, None),
+    };
+    if host.is_empty() || host.starts_with(['.', '-']) || host.ends_with(['.', '-']) || host.contains(':') {
+        return false;
+    }
+    if let Some(p) = port
+        && (p.is_empty() || p.len() > 5 || !p.chars().all(|c| c.is_ascii_digit()))
+    {
+        return false;
+    }
+    https || host == "localhost"
+}
+
+/// The embedding page's origin, from `?parentOrigin=...`. `None` disables the bridge.
+fn parent_origin() -> Option<String> {
+    let q = query();
+    let raw = q.trim_start_matches('?').split('&').find_map(|kv| kv.strip_prefix("parentOrigin="))?;
+    let decoded: String = js_sys::decode_uri_component(raw).ok()?.into();
+    valid_origin(&decoded).then_some(decoded)
+}
+
+/// Post `msg` to the parent window, addressed to the validated parent origin only (never "*").
 fn post_to_parent(msg: &js_sys::Object) -> Result<(), String> {
+    let origin = parent_origin().ok_or("bridge disabled (no valid parentOrigin)")?;
     let w = web_sys::window().ok_or("no window")?;
-    let origin = w.location().origin().map_err(js_err)?;
     let parent = w.parent().map_err(js_err)?.ok_or("no parent window")?;
     parent.post_message(msg, &origin).map_err(js_err)
 }
@@ -218,9 +251,19 @@ fn install_bridge(inbox: Inbox, ctx: egui::Context) {
     let Some(window) = web_sys::window() else {
         return;
     };
-    let own_origin = window.location().origin().unwrap_or_default();
+    let Some(parent_origin) = parent_origin() else {
+        log::info!("bridge disabled: no valid parentOrigin in the query string");
+        return;
+    };
     let on_message = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |ev: web_sys::MessageEvent| {
-        if ev.origin() != own_origin {
+        if ev.origin() != parent_origin {
+            return;
+        }
+        let from_parent = match (ev.source(), web_sys::window().and_then(|w| w.parent().ok().flatten())) {
+            (Some(src), Some(par)) => js_sys::Object::is(&src, &par),
+            _ => false,
+        };
+        if !from_parent {
             return;
         }
         let data = ev.data();
@@ -252,7 +295,7 @@ fn install_bridge(inbox: Inbox, ctx: egui::Context) {
 /// Returns true when the bytes were posted.
 fn post_saved(name: &str, bytes: &[u8]) -> bool {
     let ext = name.rsplit('.').next().map(str::to_ascii_lowercase).unwrap_or_default();
-    if !in_iframe() || !NATIVE_EXTS.contains(&ext.as_str()) {
+    if !in_iframe() || parent_origin().is_none() || !NATIVE_EXTS.contains(&ext.as_str()) {
         return false;
     }
     let buffer = js_sys::Uint8Array::from(bytes).buffer();
