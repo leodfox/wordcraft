@@ -158,7 +158,7 @@ pub fn lang_from_tag(tag: &str) -> Option<Lang> {
     cands.iter().find_map(|c| Lang::from_code(c))
 }
 
-/// The first of the system's preferred languages WordCraft has, in the user's order: someone
+/// The first of the system's preferred languages Ardoise Texte has, in the user's order: someone
 /// who prefers French, then Japanese, gets Japanese rather than English.
 pub fn first_supported<'a>(tags: impl IntoIterator<Item = &'a str>) -> Option<Lang> {
     tags.into_iter().find_map(lang_from_tag)

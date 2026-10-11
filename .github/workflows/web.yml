@@ -57,5 +57,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ardoise-web-word-v0.4.0-${{ github.run_number }}
         run: |
-          gh release create "$TAG" --target "$GITHUB_SHA" --title "Ardoise Documents web bundle ($TAG)" \
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "Ardoise Texte web bundle ($TAG)" \
             --notes "Web bundle built from $GITHUB_SHA (based on WordCraft v0.4.0, Apache-2.0)." dist/release/*.zip

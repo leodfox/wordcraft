@@ -4,7 +4,7 @@
 	1.5 Line Spacing	1.5 行
 	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	Rust でゼロから書かれた、無料のオープンソース ワープロです。\nArtCraft チームの Crafting Apps のひとつです。
 	About	情報
-	About WordCraft	WordCraft について
+	About Ardoise Texte	Ardoise Texte について
 	Accept	承諾
 	Accept All Changes	すべての変更を承諾
 	Accept This Change	この変更を承諾
@@ -388,7 +388,7 @@
 	Merge Formatting	書式を結合
 	Merged PRs	マージ済みの PR
 	Mirrored	見開きページ
-	MIT OR Apache-2.0. Copyright (c) 2026 ArtCraft Team and the WordCraft contributors.	MIT OR Apache-2.0。Copyright (c) 2026 ArtCraft チームおよび WordCraft の貢献者。
+	MIT OR Apache-2.0. Copyright (c) 2026 ArtCraft Team and the Ardoise Texte contributors.	MIT OR Apache-2.0。Copyright (c) 2026 ArtCraft チームおよび Ardoise Texte の貢献者。
 	Moderate	やや狭い
 	Modify Style	スタイルの変更
 	Modify…	変更…
@@ -756,7 +756,7 @@
 	Word Left	前の単語へ
 	Word Right	次の単語へ
 	WordArt	ワードアート
-	WordCraft	WordCraft
+	Ardoise Texte	Ardoise Texte
 	Words	単語数
 	Words only	単語のみ
 	Wrap Text	文字列の折り返し

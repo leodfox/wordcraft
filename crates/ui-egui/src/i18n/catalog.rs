@@ -1,5 +1,5 @@
 //! Parser and lookup table for translation catalogs (`*.tsv`, format documented in `zh-hans.tsv`).
-//! The format is PdfCraft's; WordCraft uses its plain (context-free) entries.
+//! The format is PdfCraft's; Ardoise Texte uses its plain (context-free) entries.
 //!
 //! Validation is strict (unknown escapes, unknown `@` contexts, placeholder, ellipsis and plural
 //! form mismatches, duplicates), but a bad line is only skipped and reported: the rest of the
@@ -59,7 +59,7 @@ pub fn placeholders(text: &str) -> Vec<&str> {
 fn validate(entry: &Entry) -> Result<(), String> {
     let Entry { context, source, translation } = entry;
     if !context.is_empty() {
-        return Err(format!("contexts aren't used in WordCraft catalogs (found {context:?}); leave the first column empty"));
+        return Err(format!("contexts aren't used in Ardoise Texte catalogs (found {context:?}); leave the first column empty"));
     }
     if placeholders(source) != placeholders(translation) {
         return Err("placeholders differ from the English source".into());

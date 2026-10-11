@@ -1,4 +1,4 @@
-//! WordCraft's egui front end: a Word-style window (title bar with Quick Access Toolbar, ribbon,
+//! Ardoise Texte's egui front end: a Word-style window (title bar with Quick Access Toolbar, ribbon,
 //! rulers, page canvas, panes, status bar, Backstage, dialogs) over `wordcraft-engine`.
 //!
 //! The UI is thin: it reads `Session` state and acts through [`WordApp::run`] (command ids), so
@@ -447,7 +447,7 @@ impl WordApp {
         if let Some(url) = self.canvas.open_url.take() {
             ctx.open_url(egui::OpenUrl::new_tab(url));
         }
-        let title = format!("{}{} - WordCraft", self.title_stem(), if self.session.dirty { " •" } else { "" });
+        let title = format!("{}{} - Ardoise Texte", self.title_stem(), if self.session.dirty { " •" } else { "" });
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(title));
         self.frame_ms = now_ms() - t0;
     }

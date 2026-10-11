@@ -5,7 +5,7 @@
 	1.5 Line Spacing	1.5 倍行距
 	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	一款以 Rust 從零開始撰寫的免費開源文書處理軟體。\n屬於 ArtCraft 團隊的 Crafting Apps 系列。
 	About	關於
-	About WordCraft	關於 WordCraft
+	About Ardoise Texte	關於 Ardoise Texte
 	Accept	接受
 	Accept All Changes	接受所有修訂
 	Accept This Change	接受此修訂
@@ -389,7 +389,7 @@
 	Merge Formatting	合併格式設定
 	Merged PRs	已合併的 PR
 	Mirrored	左右對稱
-	MIT OR Apache-2.0. Copyright (c) 2026 ArtCraft Team and the WordCraft contributors.	MIT OR Apache-2.0。著作權所有 (c) 2026 ArtCraft 團隊及 WordCraft 貢獻者。
+	MIT OR Apache-2.0. Copyright (c) 2026 ArtCraft Team and the Ardoise Texte contributors.	MIT OR Apache-2.0。著作權所有 (c) 2026 ArtCraft 團隊及 Ardoise Texte 貢獻者。
 	Moderate	中等
 	Modify Style	修改樣式
 	Modify…	修改…
@@ -757,7 +757,7 @@
 	Word Left	左移一個單字
 	Word Right	右移一個單字
 	WordArt	文字藝術師
-	WordCraft	WordCraft
+	Ardoise Texte	Ardoise Texte
 	Words	字數
 	Words only	僅文字
 	Wrap Text	文繞圖

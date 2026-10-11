@@ -295,11 +295,12 @@ fn install_bridge(inbox: Inbox, ctx: egui::Context) {
 /// Returns true when the bytes were posted.
 fn post_saved(name: &str, bytes: &[u8]) -> bool {
     let ext = name.rsplit('.').next().map(str::to_ascii_lowercase).unwrap_or_default();
-    if !in_iframe() || parent_origin().is_none() || !NATIVE_EXTS.contains(&ext.as_str()) {
+    if !in_iframe() || parent_origin().is_none() {
         return false;
     }
+    let export = !NATIVE_EXTS.contains(&ext.as_str());
     let buffer = js_sys::Uint8Array::from(bytes).buffer();
-    let msg = message(&[("type", "saved".into()), ("app", ARDOISE_APP.into()), ("name", name.into()), ("bytes", buffer.into())]);
+    let msg = message(&[("type", "saved".into()), ("app", ARDOISE_APP.into()), ("name", name.into()), ("bytes", buffer.into()), ("export", export.into())]);
     match post_to_parent(&msg) {
         Ok(()) => true,
         Err(e) => {

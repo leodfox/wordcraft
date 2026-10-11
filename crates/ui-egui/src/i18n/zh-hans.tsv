@@ -1,6 +1,6 @@
 # Simplified Chinese (zh-hans) interface catalog. Columns, separated by a TAB:
 #   context <TAB> English source <TAB> translation
-#   context    empty (WordCraft uses no contexts yet)
+#   context    empty (Ardoise Texte uses no contexts yet)
 #   source     the English text exactly as in the code (tl!(...), ribbon labels, command labels)
 #   escapes    \n  \t  \\  inside a column. `{name}` placeholders must appear in both columns, and a
 #              trailing "…" in one needs one in the other.
@@ -9,13 +9,13 @@
 # Clean room: every entry was written from the plain meaning of the English label in ordinary
 # computing vocabulary. No Microsoft Word (or other product) localisation, string table or
 # translated UI was consulted or copied; add entries the same way.
-# Product, format and technology names (WordCraft, PDF, Markdown, MCP …) stay in Latin letters.
+# Product, format and technology names (Ardoise Texte, PDF, Markdown, MCP …) stay in Latin letters.
 
 	(no suggestions)	（无建议）
 	1.5 Line Spacing	1.5 倍行距
 	A free, open-source word processor written from scratch in Rust.\nPart of the Crafting Apps from the ArtCraft team.	一款用 Rust 从零编写的免费开源文字处理软件。\n属于 ArtCraft 团队的 Crafting Apps 系列。
 	About	关于
-	About WordCraft	关于 WordCraft
+	About Ardoise Texte	关于 Ardoise Texte
 	Accept	接受
 	Accept All Changes	接受所有修订
 	Accept This Change	接受此修订
@@ -399,7 +399,7 @@
 	Merge Formatting	合并格式
 	Merged PRs	已合并的 PR
 	Mirrored	对称
-	MIT OR Apache-2.0. Copyright (c) 2026 ArtCraft Team and the WordCraft contributors.	MIT OR Apache-2.0。版权所有 (c) 2026 ArtCraft 团队及 WordCraft 贡献者。
+	MIT OR Apache-2.0. Copyright (c) 2026 ArtCraft Team and the Ardoise Texte contributors.	MIT OR Apache-2.0。版权所有 (c) 2026 ArtCraft 团队及 Ardoise Texte 贡献者。
 	Moderate	适中
 	Modify Style	修改样式
 	Modify…	修改…
@@ -767,7 +767,7 @@
 	Word Left	左移一个单词
 	Word Right	右移一个单词
 	WordArt	艺术字
-	WordCraft	WordCraft
+	Ardoise Texte	Ardoise Texte
 	Words	字数
 	Words only	仅字词
 	Wrap Text	环绕文字
